@@ -1,20 +1,21 @@
 import os
 import time
 import re
+import unittest
 
 
-def listdir(dir, prefix='result_spider_randomtopquery_url'):
+def listdir(dir, dirSubPrefix='result_spider_randomtopquery_url'):
     for item in os.listdir(dir):
         # print 'prf',prefix,'item',item
-        if os.path.isdir(os.path.join(dir, item)) and item.find(prefix) >= 0:
+        if os.path.isdir(os.path.join(dir, item)) and item.find(dirSubPrefix) >= 0:
             yield (os.path.join(dir, item))
 
 
 def listfile(dir, subdirprefix='result_spider_randomtopquery_url',
-             prefix='result_spider_deadlink_monitor_random_iphone_url'):
-    for rootdir in listdir(dir, prefix=subdirprefix):
+             fileSubPrefix='result_spider_deadlink_monitor_random_iphone_url'):
+    for rootdir in listdir(dir, dirSubPrefix=subdirprefix):
         for subdir in os.listdir(rootdir):
-            if subdir.find(prefix) != -1:
+            if subdir.find(fileSubPrefix) != -1:
                 yield os.path.join(rootdir, subdir)
 
 
@@ -24,7 +25,7 @@ def parseDateString(dateStr):
 
 
 def stripDateStr(rawStr):
-    reg = re.compile('.+\.\d{8}\.(\d{8})$')
+    reg = re.compile('.+\.(\d{8})$')
     return reg.match(rawStr)
 
 
@@ -35,26 +36,44 @@ def splitline(line):
     return splited
 
 
-def testStripDateStr():
-    rawstr = 'result\result_spider_randomtopquery_url.20140723\result_spider_deadlink_monitor_random_iphone_url.20140723.20140723'
-    print stripDateStr(rawstr)
+def getDateFromStr(rawStr):
+    if stripDateStr(rawStr):
+        return parseDateString(stripDateStr(rawStr).group(1))
 
 
-def testListdir():
-    ld = [sub for sub in listdir('result')]
-    print 'ld', ld
+class TestUtilFunctions(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_stripDateStr(self):
+        rawstr1 = 'result\result_spider_randomtopquery_url.20140723\result_spider_deadlink_monitor_random_iphone_url.20140723.20140723'
+        rawstr2 = 'C:\Users\hanbowen\PycharmProjects\pyloader\result\result_spider_random_classfiy_url.20140801\result_spider_deadlink_10000_aladdin.20140801'
+
+        self.assertIsNotNone(stripDateStr(rawstr1))
+        self.assertIsNotNone(stripDateStr(rawstr2))
+
+    def test_stripDateStr(self):
+        rawstr1 = 'result\result_spider_randomtopquery_url.20140723\result_spider_deadlink_monitor_random_iphone_url.20140723.20140723'
+        rawstr2 = 'C:\Users\hanbowen\PycharmProjects\pyloader\result\result_spider_random_classfiy_url.20140801\result_spider_deadlink_10000_aladdin.20140801'
+
+        self.assertEqual('2014-07-23', getDateFromStr(rawstr1))
+        self.assertEqual('2014-08-01', getDateFromStr(rawstr2))
+
+    def test_listdir(self):
+        ld = [sub for sub in listdir('result')]
+        self.assertTrue(ld)
 
 
-def testListfile():
-    subld = [sub for sub in listfile('result')]
-    print 'subld', subld
+    def test_listfile(self):
+        subld = [sub for sub in listfile('result')]
+        self.assertTrue(subld)
 
 
 if __name__ == '__main__':
     # testListdir()
-    # testListfile()
+    # test_listfile()
     #print parseDateString("20140517")
-    testStripDateStr()
+    unittest.main()
 
 
 
