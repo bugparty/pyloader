@@ -9,6 +9,7 @@ import _mysql_exceptions
 
 from fileloader import FileLoader
 
+
 ERRORCODE_DB_AUTH_FAIL = 3
 
 
@@ -46,7 +47,8 @@ class DB():
     _schema_drop_deadlink_classify = ''' drop table %s''' % _table_deadlink_classify
 
     _schema_insert_table_deadlink = u"INSERT INTO think_deadlink (query,type1,dest_url,src_url, http_code,type2,type3,date ) VALUES(%s, '%s')"
-    _schema_insert_table_deadlink_classify = u"INSERT INTO think_deadlink_classify (dest_url,src_url, http_code,page_weight,dead_reason,class,date ) VALUES(%s,'%s', '%s')"
+    _schema_insert_table_deadlink_classify = \
+        u"INSERT INTO think_deadlink_classify (dest_url,src_url, http_code,page_weight,dead_reason,class,date ) VALUES(%s,%s,%s,%s,%s,%s,%s)"
 
     def __init__(self, user='root', password='', host='localhost', db='jiankong'):
         self.user = user
@@ -58,7 +60,7 @@ class DB():
     def _get_conn(self):
         try:
             if (self.user == 'root' and self.password == '' and self.host == 'localhost'):
-                conn = MySQLdb.connect('localhost', 'root', db='jiankong', charset='utf8')
+                conn = MySQLdb.connect('localhost', 'root', db=self.db, charset='utf8')
             else:
                 conn = MySQLdb.connect(self.host, self.user, self.password, db=self.db, charset='utf8')
         except MySQLdb.Error, e:
@@ -114,8 +116,6 @@ class DB():
                 print 'table exists,going to drop table %s' % self._table_deadlink
                 self.drop_table_deadlink()
                 self.create_table_deadlink()
-
-
 
         finally:
             if conn:
@@ -195,7 +195,7 @@ class DB():
 
         print 'line type', type(lines)
         try:
-            lines = [('"' + '","'.join(line) + '"').decode('u8') for line in lines]
+            lines_enc = [('"' + '","'.join(line) + '"').decode('u8') for line in lines]
             # lines = [("'" + "','".join(line) + "'").decode('u8') for line in lines]
         except TypeError, e:
             print >> sys.stderr, e.args[0]
@@ -215,10 +215,11 @@ class DB():
             for line in lines:
                 # line = line.decode('gb2312','ignore').encode('utf8')
                 #print 'executing',schema % (line,today)
-                q = self._schema_insert_table_deadlink_classify % (line, cls, data_date)
-                enc_q = q.encode('u8')
+                line.append(cls)
+                line.append(data_date)
+                q = self._schema_insert_table_deadlink_classify
                 try:
-                    cur.execute(enc_q)
+                    cur.execute(q, tuple(line))
                 except MySQLdb.ProgrammingError, e:
                     if e.args[0] == 1064:
                         print "the query has syntax error", enc_q

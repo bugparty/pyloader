@@ -22,7 +22,7 @@ def stat_httpcode(lines, linenum):
     return result
 
 
-class TestStatisticsFunctions(unittest.TestCase):
+class StatisticsUnitTest(unittest.TestCase):
     def setUp(self):
         pass
 

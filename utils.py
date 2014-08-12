@@ -4,16 +4,16 @@ import re
 import unittest
 
 
-def listdir(dir, dirSubPrefix='result_spider_randomtopquery_url'):
+def dir_list(dir, dirSubPrefix='result_spider_randomtopquery_url'):
     for item in os.listdir(dir):
         # print 'prf',prefix,'item',item
         if os.path.isdir(os.path.join(dir, item)) and item.find(dirSubPrefix) >= 0:
             yield (os.path.join(dir, item))
 
 
-def listfile(dir, subdirprefix='result_spider_randomtopquery_url',
-             fileSubPrefix='result_spider_deadlink_monitor_random_iphone_url'):
-    for rootdir in listdir(dir, dirSubPrefix=subdirprefix):
+def dir_listfile(dir, subdirprefix='result_spider_randomtopquery_url',
+                 fileSubPrefix='result_spider_deadlink_monitor_random_iphone_url'):
+    for rootdir in dir_list(dir, dirSubPrefix=subdirprefix):
         for subdir in os.listdir(rootdir):
             if subdir.find(fileSubPrefix) != -1:
                 yield os.path.join(rootdir, subdir)
@@ -60,19 +60,19 @@ class TestUtilFunctions(unittest.TestCase):
         self.assertEqual('2014-08-01', getDateFromStr(rawstr2))
 
     def test_listdir(self):
-        ld = [sub for sub in listdir('result')]
+        ld = [sub for sub in dir_list('result')]
         self.assertTrue(ld)
 
 
     def test_listfile(self):
-        subld = [sub for sub in listfile('result')]
+        subld = [sub for sub in dir_listfile('result')]
         self.assertTrue(subld)
 
 
 if __name__ == '__main__':
     # testListdir()
     # test_listfile()
-    #print parseDateString("20140517")
+    # print parseDateString("20140517")
     unittest.main()
 
 

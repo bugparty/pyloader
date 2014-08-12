@@ -1,0 +1,105 @@
+# -*- encoding:utf8 -*-
+import argparse
+import itertools
+import sys
+
+from fileloader import FileLoader
+from dbhelper import DB
+import utils
+import statistics
+
+
+def do_import_rtq(password=''):
+    loader = FileLoader()
+    db = DB(password=password)
+    db.create_table_deadlink()
+    # print 'try loading', sys.argv[1]
+    # lines = loader.load(
+    # sys.argv[1])
+    for file in utils.dir_listfile('result'):
+        rawdatestr = utils.stripDateStr(file).group(1)
+        datestr = utils.parseDateString(rawdatestr)
+        lines = loader.load(file, 7)
+        print 'staring insert lines from', file, 'datetime is', datestr
+
+        db.inserts_deadlink(lines, date=datestr)
+        print 'insert completed'
+
+
+def do_import_rcu(db, password=''):
+    loader = FileLoader()
+    db = DB(password=password, db=db)
+    db.create_table_deadlink_classify()
+    cates = ['aladdin', 'h5', 'lightaap', 'normal', 'siteapp', 'tc']
+    for category in cates:
+        for file in utils.dir_listfile('result',
+                                       subdirprefix='result_spider_random_classfiy_url',
+                                       fileSubPrefix='result_spider_10000_' + category):
+            datestr = utils.getDateFromStr(file)
+            lines = loader.load(file, 5)
+
+            def httpcodeNot200(line):
+                return line[2] != '200'
+
+            try:
+                filteredlines = [i for i in itertools.ifilter(httpcodeNot200, lines)]
+            except TypeError, e:
+                print >> sys.stderr, e.args
+                continue
+            print 'deads', len(filteredlines), 'staring insert lines from', file, 'datetime is', datestr
+            db.inserts_deadlink_classify(filteredlines, cls='aladdin', date=datestr)
+            print 'insert completed'
+
+
+def do_rcu_stat():
+    loader = FileLoader()
+    cates = ['aladdin', 'h5', 'lightaap', 'normal', 'siteapp', 'tc']
+    for category in cates:
+        for file in utils.dir_listfile('result',
+                                       subdirprefix='result_spider_random_classfiy_url',
+                                       fileSubPrefix='result_spider_10000_' + category):
+            datestr = utils.getDateFromStr(file)
+            lines = loader.load(file, 5)
+            print 'date is', datestr, 'file is', file
+            stats = statistics.stat_httpcode(lines, 2)
+
+            print 'stat is', stats
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("cmd", choices=['rtq', 'rcu', 'rcu_stat'],
+                        help=u"指定运行的命令,导入randomTopQuery,请使用rtq."
+                             u"导入random query classfiy死链数据,请使用rcu"
+                             u"生成random query classify统计数据,使用rcu_stat")
+    parser.add_argument("--verbose", action="store_true", help=u"输出全部信息")
+    parser.add_argument("--dbpwd", help=u"指定数据库密码,默认为空")
+    parser.add_argument("--dbname", help=u"指定数据库名,默认为jiankong")
+
+    args = parser.parse_args()
+
+    if (args.cmd == 'rtq'):
+        if (args.dbpwd):
+            do_import_rtq(password=args.dbpwd)
+        else:
+            do_import_rtq()
+
+    elif (args.cmd == 'rcu'):
+        password = ''
+        dbname = 'jiankong'
+        if (args.dbpwd):
+            password = args.dbpwd
+        if (args.dbname):
+            dbname = args.dbname
+
+        do_import_rcu(db=dbname, password=password)
+    elif (args.cmd == 'rcu_stat'):
+        do_rcu_stat()
+
+
+
+
+
+
+
