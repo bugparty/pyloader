@@ -47,7 +47,7 @@ def do_import_rcu(db, password=''):
                 print >> sys.stderr, e.args
                 continue
             print 'deads', len(filteredlines), 'staring insert lines from', file, 'datetime is', datestr
-            db.inserts_deadlink_classify(filteredlines, cls='aladdin', date=datestr)
+            db.inserts_deadlink_classify(filteredlines, cls=category, date=datestr)
             print 'insert completed'
 
 
@@ -74,8 +74,10 @@ if __name__ == '__main__':
                              u"导入random query classfiy死链数据,请使用rcu"
                              u"生成random query classify统计数据,使用rcu_stat")
     parser.add_argument("--verbose", action="store_true", help=u"输出全部信息")
-    parser.add_argument("--dbpwd", help=u"指定数据库密码,默认为空")
-    parser.add_argument("--dbname", help=u"指定数据库名,默认为jiankong")
+    dbname_default = 'deadlink_monitor'
+    dbpwd_default = 'wisetest'
+    parser.add_argument("--dbpwd", help=u"指定数据库密码,默认为" + dbpwd_default, default=dbpwd_default)
+    parser.add_argument("--dbname", help=u"指定数据库名,默认为" + dbname_default, default=dbname_default)
 
     args = parser.parse_args()
 
