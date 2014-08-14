@@ -102,7 +102,7 @@ class DB():
             if conn:
                 conn.close()
 
-    def create_table_deadlink(self):
+    def create_table_deadlink(self, force=False):
 
 
         conn = self._get_conn()
@@ -113,9 +113,10 @@ class DB():
         except MySQLdb.OperationalError, e:
             print 'OperationalError', e.args[0], e.args[1]
             if e.args[0] == 1050:
-                print 'table exists,going to drop table %s' % self._table_deadlink
-                self.drop_table_deadlink()
-                self.create_table_deadlink()
+                if force:
+                    print 'table exists,going to drop table %s' % self._table_deadlink
+                    self.drop_table_deadlink()
+                    self.create_table_deadlink()
 
         finally:
             if conn:
@@ -173,7 +174,7 @@ class DB():
             if conn:
                 conn.close()
 
-    def create_table_deadlink_classify(self):
+    def create_table_deadlink_classify(self, force=False):
 
         conn = self._get_conn()
         cur = conn.cursor()
@@ -183,14 +184,35 @@ class DB():
         except MySQLdb.OperationalError, e:
             print 'OperationalError', e.args[0], e.args[1]
             if e.args[0] == 1050:
-                print 'table exists,going to drop table %s' % self._table_deadlink_classify
-                self.drop_table_deadlink_classify()
-                self.create_table_deadlink_classify()
+                if force:
+                    print 'table exists,going to drop table %s' % self._table_deadlink_classify
+                    self.drop_table_deadlink_classify()
+                    self.create_table_deadlink_classify()
 
         finally:
             if conn:
                 conn.close()
 
+    def get_last_day(self, table):
+        tables = [self._table_deadlink, self._table_deadlink_classify]
+        bFind = False
+        for t in tables:
+            if t.find(table) >= 0:
+                table = t
+                bFind = True
+                break
+        if not bFind:
+            return
+
+        conn = self._get_conn()
+        cur = conn.cursor()
+        cur.execute(''' select distinct(date) from %s order by date desc limit 1;''' % table)
+        row = cur.fetchone()
+        try:
+            val = row[0]
+        except TypeError:
+            val = None
+        return val
     def inserts_deadlink_classify(self, lines, cls, date='today'):
 
         print 'line type', type(lines)
@@ -240,7 +262,7 @@ class DB():
 
 class DBUnitTest(unittest.TestCase):
     def setUp(self):
-        self.db = DB(password='root')
+        self.db = DB(password='root', db='deadlink_monitor')
 
     def test_mysql_version(self):
         self.assertIsNotNone(self.db.mysql_version())
@@ -261,6 +283,11 @@ class DBUnitTest(unittest.TestCase):
             'result/result_spider_deadlink_monitor_random_iphone_url.20140719.20140719', 7)
         print 'staring insert lines'
         self.db.inserts_deadlink(lines)
+
+    def test_get_last_day(self):
+        r = self.db.get_last_day('classify')
+
+        self.assertEqual(r, None, 'there should be nothing at all')
 
 
 if __name__ == '__main__':
